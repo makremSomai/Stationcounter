@@ -1,0 +1,9 @@
+{
+  "name": "PS Lounge Tracker (TND)",
+  "short_name": "PS Tracker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f2f4f7",
+  "theme_color": "#0b1f2a",
+  "icons": []
+}
