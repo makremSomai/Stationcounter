@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PS Lounge Tracker (TND)</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0b1f2a" />
+
+  <style>
+    :root{
+      --bg:#f2f4f7;
+      --text:#0b1f2a;
+      --muted:#50606f;
+
+      --idle:#e74c3c;
+      --play:#2ecc71;
+      --pause:#f39c12;
+
+      --card:#ffffff;
+      --stroke:rgba(0,0,0,.12);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    header{
+      padding:16px 16px 8px;
+      max-width:1100px;
+      margin:0 auto;
+    }
+    h1{margin:0 0 6px; font-size:22px}
+    .sub{color:var(--muted); font-size:13px; line-height:1.4}
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:12px 16px 20px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    /* Stations grid */
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:12px;
+    }
+    @media (max-width: 720px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+      background:var(--card);
+    }
+
+    .cardTop{
+      padding:12px 12px 10px;
+      color:#fff;
+    }
+    .titleRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .stationTitle{
+      font-weight:900;
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+    .pill{
+      font-weight:900;
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.22);
+      border:1px solid rgba(255,255,255,.30);
+      white-space:nowrap;
+    }
+
+    .body{
+      padding:12px;
+      display:grid;
+      gap:6px;
+    }
+    .line{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-size:14px;
+    }
+    .line b{font-weight:1000}
+
+    .btnRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:8px;
+      margin-top:8px;
+    }
+    button{
+      border:0;
+      border-radius:10px;
+      padding:12px 10px;
+      font-weight:1000;
+      cursor:pointer;
+      background:#fff;
+      border:1px solid var(--stroke);
+      color:var(--text);
+    }
+    button:active{transform:scale(.99)}
+    .primary{ background:#0b1f2a; color:#fff; border-color:#0b1f2a; }
+    .warn{ background:#f5f5f5; }
+    .danger{ background:#ffffff; }
+
+    /* Sales blocks (must be between stations and summary) */
+    .salesGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+      margin-top:2px;
+    }
+    @media (max-width: 720px){
+      .salesGrid{ grid-template-columns: 1fr; }
+    }
+    .saleBlock{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      padding:12px;
+      background:#fff;
+      box-shadow:0 2px 10px rgba(0,0,0,.04);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .saleTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .saleName{
+      font-weight:1000;
+      font-size:16px;
+    }
+    .salePrice{
+      font-weight:1000;
+      color:#0b1f2a;
+    }
+    .saleBtn{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid var(--stroke);
+      font-weight:1000;
+      background:#0b1f2a;
+      color:#fff;
+      cursor:pointer;
+    }
+    .saleBtn.secondary{
+      background:#fff;
+      color:#0b1f2a;
+    }
+    .input{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid var(--stroke);
+      font-weight:900;
+      font-size:14px;
+      outline:none;
+    }
+
+    /* Summary */
+    .summary{
+      border:1px solid var(--stroke);
+      border-radius:14px;
+      background:#fff;
+      padding:14px;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+    }
+    .summaryTop{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      justify-content:space-between;
+      align-items:flex-end;
+    }
+    .big{
+      font-size:18px;
+      font-weight:1100;
+    }
+    .small{color:var(--muted); font-size:13px}
+
+    .splitRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (max-width: 720px){
+      .splitRow{ grid-template-columns: 1fr; }
+    }
+    .mini{
+      border:1px solid var(--stroke);
+      border-radius:12px;
+      padding:10px;
+      background:#fff;
+    }
+    .miniTitle{
+      font-weight:1000;
+      margin-bottom:6px;
+    }
+    .miniLine{
+      display:flex;
+      justify-content:space-between;
+      font-size:14px;
+    }
+
+    .summaryBtns{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+    .summaryBtns button{padding:10px 12px}
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:#0b1f2a;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:10px;
+      font-weight:1000;
+      display:none;
+      box-shadow:0 8px 24px rgba(0,0,0,.25);
+      max-width:92vw;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>PS Lounge Tracker (TND)</h1>
+    <div class="sub">
+      ✅ Charge on <b>START</b> only (PS4=1 TND, PS5=2 TND) • ✅ Countdown per paid session = <b>20 min</b><br/>
+      ✅ Global active time counts <b>once</b> even if multiple stations play • Data saved on your phone
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- 1) STATIONS -->
+    <div id="grid" class="grid"></div>
+
+    <!-- 2) SALES BLOCKS (between stations and summary) -->
+    <div class="salesGrid">
+      <div class="saleBlock">
+        <div class="saleTop">
+          <div class="saleName">☕ Coffee</div>
+          <div class="salePrice">+1.5 TND</div>
+        </div>
+        <button class="saleBtn" id="coffeeBtn">Add Coffee</button>
+      </div>
+
+      <div class="saleBlock">
+        <div class="saleTop">
+          <div class="saleName">🥪 Sandwich</div>
+          <div class="salePrice">+2 TND</div>
+        </div>
+        <button class="saleBtn" id="sandBtn">Add Sandwich</button>
+      </div>
+
+      <div class="saleBlock">
+        <div class="saleTop">
+          <div class="saleName">🛠 Extra service</div>
+          <div class="salePrice">Manual</div>
+        </div>
+        <input class="input" id="extraInput" inputmode="decimal" placeholder="Type amount (TND) e.g. 3.5" />
+        <button class="saleBtn" id="extraBtn">Add Amount</button>
+        <button class="saleBtn secondary" id="extraClearBtn">Clear input</button>
+      </div>
+    </div>
+
+    <!-- 3) SUMMARY -->
+    <div class="summary">
+      <div class="summaryTop">
+        <div>
+          <div class="big" id="totalMoney">Total revenue: 0.00 TND</div>
+          <div class="small" id="totalTime">Total lounge active time: 00:00</div>
+          <div class="small" id="counts">Playing: 0 | Paused: 0 | Idle: 6</div>
+        </div>
+        <div class="small">
+          Logs: <span id="logCount">0</span><br/>
+          Peak hour: <span id="peakHour">--</span>
+        </div>
+      </div>
+
+      <div class="splitRow">
+        <div class="mini">
+          <div class="miniTitle">Revenue split (PlayStations)</div>
+          <div class="miniLine"><span>PS4</span><b id="ps4Rev">0.00 TND</b></div>
+          <div class="miniLine"><span>PS5</span><b id="ps5Rev">0.00 TND</b></div>
+        </div>
+
+        <div class="mini">
+          <div class="miniTitle">Other sales (snacks/services)</div>
+          <div class="miniLine"><span>Extras total</span><b id="extrasRev">0.00 TND</b></div>
+          <div class="miniLine"><span>Coffee count</span><b id="coffeeCount">0</b></div>
+          <div class="miniLine"><span>Sandwich count</span><b id="sandCount">0</b></div>
+        </div>
+      </div>
+
+      <div class="summaryBtns">
+        <button class="primary" id="exportBtn">Export CSV</button>
+        <button id="resetBtn">Reset stations (keep totals)</button>
+        <button class="danger" id="wipeBtn">Wipe everything</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const SESSION_MIN = 20;
+  const SESSION_SEC = SESSION_MIN * 60;
+
+  const stationsInit = [
+    { id:"PS4-1", console:"PS4", price:1 },
+    { id:"PS4-2", console:"PS4", price:1 },
+    { id:"PS4-3", console:"PS4", price:1 },
+    { id:"PS4-4", console:"PS4", price:1 },
+    { id:"PS5-1", console:"PS5", price:2 },
+    { id:"PS5-2", console:"PS5", price:2 },
+  ];
+
+  const LS_KEY = "ps_lounge_tracker_v2";
+
+  const nowMs = () => Date.now();
+  const pad2 = n => String(n).padStart(2,"0");
+  const fmtMMSS = (sec) => {
+    sec = Math.max(0, Math.floor(sec));
+    return `${pad2(Math.floor(sec/60))}:${pad2(sec%60)}`;
+  };
+
+  const toast = (msg) => {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.style.display = "block";
+    clearTimeout(el._t);
+    el._t = setTimeout(()=> el.style.display="none", 1600);
+  };
+
+  function defaultState(){
+    return {
+      version: 2,
+
+      revenueAccumPlay: 0,
+      revenueAccumExtras: 0,
+      coffeeCount: 0,
+      sandwichCount: 0,
+
+      globalActiveSec: 0,
+      globalRunning: false,
+      globalStartMs: 0,
+
+      logs: [],
+      stations: Object.fromEntries(stationsInit.map(s => [s.id, {
+        id: s.id,
+        console: s.console,
+        price: s.price,
+        status: "IDLE",     // IDLE / PLAYING / PAUSED
+        playSec: 0,
+        startMs: 0,
+        sessionsPaid: 0,
+        revenue: 0,
+        firstStartIso: ""
+      }]))
+    };
+  }
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      if(!parsed || !parsed.stations) return defaultState();
+      return parsed;
+    }catch{
+      return defaultState();
+    }
+  }
+
+  function save(){
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+
+  let state = load();
+
+  // Global time counts once if ANY station is PLAYING
+  function anyPlaying(){
+    return Object.values(state.stations).some(s => s.status === "PLAYING");
+  }
+
+  function globalUpdateOnStateChange(){
+    const any = anyPlaying();
+    if(any && !state.globalRunning){
+      state.globalRunning = true;
+      state.globalStartMs = nowMs();
+    }
+    if(!any && state.globalRunning){
+      const delta = Math.floor((nowMs() - state.globalStartMs)/1000);
+      state.globalActiveSec += Math.max(0, delta);
+      state.globalRunning = false;
+      state.globalStartMs = 0;
+    }
+  }
+
+  function globalActiveForDisplay(){
+    if(state.globalRunning){
+      const delta = Math.floor((nowMs() - state.globalStartMs)/1000);
+      return state.globalActiveSec + Math.max(0, delta);
+    }
+    return state.globalActiveSec;
+  }
+
+  // Station actions
+  function startStation(id){
+    const s = state.stations[id];
+
+    // resume from PAUSED (no new charge)
+    if(s.status === "PAUSED"){
+      s.status = "PLAYING";
+      s.startMs = nowMs();
+      globalUpdateOnStateChange();
+      save(); render();
+      return;
+    }
+
+    // ignore if already playing
+    if(s.status === "PLAYING") return;
+
+    // IDLE -> charge immediately
+    s.status = "PLAYING";
+    s.startMs = nowMs();
+    s.sessionsPaid += 1;
+    s.revenue = s.sessionsPaid * s.price;
+    s.firstStartIso = new Date().toISOString();
+
+    globalUpdateOnStateChange();
+    save(); render();
+    toast(`${id}: +${s.price} TND charged`);
+  }
+
+  function pauseStation(id){
+    const s = state.stations[id];
+    if(s.status !== "PLAYING") return;
+
+    const delta = Math.floor((nowMs() - s.startMs)/1000);
+    s.playSec += Math.max(0, delta);
+    s.startMs = 0;
+    s.status = "PAUSED";
+
+    globalUpdateOnStateChange();
+    save(); render();
+  }
+
+  function stopStation(id){
+    const s = state.stations[id];
+
+    // finalize time if playing
+    if(s.status === "PLAYING") pauseStation(id);
+
+    if(s.sessionsPaid <= 0){
+      s.status = "IDLE";
+      s.playSec = 0;
+      s.startMs = 0;
+      s.revenue = 0;
+      s.firstStartIso = "";
+      globalUpdateOnStateChange();
+      save(); render();
+      return;
+    }
+
+    const playMin = Math.round(s.playSec / 60);
+    const entry = {
+      startIso: s.firstStartIso || new Date().toISOString(),
+      endIso: new Date().toISOString(),
+      station: s.id,
+      console: s.console,
+      playMin,
+      sessionsPaid: s.sessionsPaid,
+      price: s.price,
+      revenue: s.revenue
+    };
+    state.logs.push(entry);
+
+    // accumulate (so total doesn't reset)
+    state.revenueAccumPlay += s.revenue;
+
+    // reset station
+    s.status = "IDLE";
+    s.playSec = 0;
+    s.startMs = 0;
+    s.sessionsPaid = 0;
+    s.revenue = 0;
+    s.firstStartIso = "";
+
+    globalUpdateOnStateChange();
+    save(); render();
+    toast(`${id}: saved (+${entry.revenue} TND)`);
+  }
+
+  // Extras actions
+  function addCoffee(){
+    state.revenueAccumExtras += 1.5;
+    state.coffeeCount += 1;
+    save(); render();
+    toast("Coffee +1.5 TND");
+  }
+  function addSandwich(){
+    state.revenueAccumExtras += 2.0;
+    state.sandwichCount += 1;
+    save(); render();
+    toast("Sandwich +2 TND");
+  }
+  function addExtraAmount(){
+    const input = document.getElementById("extraInput");
+    const raw = (input.value || "").trim().replace(",", ".");
+    const val = Number(raw);
+    if(!isFinite(val) || val <= 0){
+      toast("Enter a valid amount (e.g. 3.5)");
+      return;
+    }
+    state.revenueAccumExtras += val;
+    save(); render();
+    toast(`Extra +${val.toFixed(2)} TND`);
+    input.value = "";
+  }
+  function clearExtra(){
+    document.getElementById("extraInput").value = "";
+  }
+
+  // Analytics
+  function revenueSplit(){
+    let ps4 = 0, ps5 = 0;
+
+    // logged
+    for(const l of state.logs){
+      if(l.console === "PS4") ps4 += l.revenue;
+      if(l.console === "PS5") ps5 += l.revenue;
+    }
+    // running/current
+    for(const s of Object.values(state.stations)){
+      if(s.console === "PS4") ps4 += (s.revenue || 0);
+      if(s.console === "PS5") ps5 += (s.revenue || 0);
+    }
+    return {ps4, ps5};
+  }
+
+  function busiestHour(){
+    if(state.logs.length === 0) return "--";
+    const map = new Map(); // hour -> revenue
+    for(const l of state.logs){
+      const h = new Date(l.startIso).getHours();
+      map.set(h, (map.get(h) || 0) + (l.revenue || 0));
+    }
+    let bestH = null, bestV = -1;
+    for(const [h,v] of map.entries()){
+      if(v > bestV){ bestV = v; bestH = h; }
+    }
+    if(bestH === null) return "--";
+    return `${String(bestH).padStart(2,"0")}:00 (${bestV.toFixed(2)} TND)`;
+  }
+
+  // Rendering
+  const grid = document.getElementById("grid");
+
+  function cardColor(status){
+    const css = getComputedStyle(document.documentElement);
+    if(status === "PLAYING") return css.getPropertyValue("--play").trim();
+    if(status === "PAUSED") return css.getPropertyValue("--pause").trim();
+    return css.getPropertyValue("--idle").trim();
+  }
+
+  function displayPlaySec(s){
+    if(s.status === "PLAYING"){
+      const delta = Math.floor((nowMs() - s.startMs)/1000);
+      return s.playSec + Math.max(0, delta);
+    }
+    return s.playSec;
+  }
+
+  function paidTimeLine(s, dispSec){
+    if(s.sessionsPaid <= 0) return "Paid time left: --";
+    const threshold = s.sessionsPaid * SESSION_SEC;
+    const delta = threshold - dispSec;
+    if(delta > 0) return `Paid time left: ${fmtMMSS(delta)}`;
+    return `OVERDUE by: ${fmtMMSS(Math.abs(delta))} (no auto charge)`;
+  }
+
+  function render(){
+    grid.innerHTML = "";
+
+    let playing=0, paused=0, idle=0;
+
+    for(const info of stationsInit){
+      const s = state.stations[info.id];
+      const dispSec = displayPlaySec(s);
+
+      if(s.status === "PLAYING") playing++;
+      else if(s.status === "PAUSED") paused++;
+      else idle++;
+
+      const topColor = cardColor(s.status);
+
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `
+        <div class="cardTop" style="background:${topColor}">
+          <div class="titleRow">
+            <div class="stationTitle">${s.id} • ${s.console}</div>
+            <div class="pill">${s.status}</div>
+          </div>
+        </div>
+
+        <div class="body">
+          <div class="line"><span>Play time</span><b>${fmtMMSS(dispSec)}</b></div>
+          <div class="line"><span>${paidTimeLine(s, dispSec)}</span><span></span></div>
+          <div class="line"><span>Sessions paid</span><b>${s.sessionsPaid}</b></div>
+          <div class="line"><span>Revenue (this station)</span><b>${(s.revenue).toFixed(2)} TND</b></div>
+
+          <div class="btnRow">
+            <button class="primary" data-act="start" data-id="${s.id}">START (+${s.price} TND)</button>
+            <button class="warn" data-act="pause" data-id="${s.id}">PAUSE</button>
+            <button class="danger" data-act="stop" data-id="${s.id}">STOP</button>
+          </div>
+        </div>
+      `;
+      grid.appendChild(el);
+    }
+
+    // bind station button actions
+    grid.querySelectorAll("button[data-act]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-id");
+        const act = btn.getAttribute("data-act");
+        if(act === "start") startStation(id);
+        if(act === "pause") pauseStation(id);
+        if(act === "stop") stopStation(id);
+      });
+    });
+
+    // totals
+    const runningMoney = Object.values(state.stations).reduce((sum,s)=> sum + (s.revenue||0), 0);
+    const totalMoney = state.revenueAccumPlay + state.revenueAccumExtras + runningMoney;
+
+    document.getElementById("totalMoney").textContent = `Total revenue: ${totalMoney.toFixed(2)} TND`;
+    document.getElementById("totalTime").textContent = `Total lounge active time: ${fmtMMSS(globalActiveForDisplay())}`;
+    document.getElementById("counts").textContent = `Playing: ${playing} | Paused: ${paused} | Idle: ${idle}`;
+    document.getElementById("logCount").textContent = String(state.logs.length);
+    document.getElementById("peakHour").textContent = busiestHour();
+
+    const split = revenueSplit();
+    document.getElementById("ps4Rev").textContent = `${split.ps4.toFixed(2)} TND`;
+    document.getElementById("ps5Rev").textContent = `${split.ps5.toFixed(2)} TND`;
+
+    document.getElementById("extrasRev").textContent = `${state.revenueAccumExtras.toFixed(2)} TND`;
+    document.getElementById("coffeeCount").textContent = String(state.coffeeCount);
+    document.getElementById("sandCount").textContent = String(state.sandwichCount);
+
+    save();
+  }
+
+  // Export / reset / wipe
+  function exportCSV(){
+    const rows = [
+      ["start_datetime","end_datetime","station","console","play_minutes","sessions_paid","price_tnd","revenue_tnd"],
+      ...state.logs.map(l => [l.startIso,l.endIso,l.station,l.console,l.playMin,l.sessionsPaid,l.price,l.revenue])
+    ];
+    const csv = rows.map(r => r.map(x => `"${String(x).replaceAll('"','""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ps_sessions_log.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function resetStationsKeepTotals(){
+    globalUpdateOnStateChange();
+    state.globalRunning = false;
+    state.globalStartMs = 0;
+
+    for(const info of stationsInit){
+      const s = state.stations[info.id];
+      s.status = "IDLE";
+      s.playSec = 0;
+      s.startMs = 0;
+      s.sessionsPaid = 0;
+      s.revenue = 0;
+      s.firstStartIso = "";
+    }
+    save(); render();
+    toast("Stations reset (totals kept)");
+  }
+
+  function wipeEverything(){
+    if(!confirm("This will delete all logs, totals and extras. Continue?")) return;
+    state = defaultState();
+    save(); render();
+    toast("All data wiped");
+  }
+
+  // bind extras + summary buttons
+  document.getElementById("coffeeBtn").addEventListener("click", addCoffee);
+  document.getElementById("sandBtn").addEventListener("click", addSandwich);
+  document.getElementById("extraBtn").addEventListener("click", addExtraAmount);
+  document.getElementById("extraClearBtn").addEventListener("click", clearExtra);
+
+  document.getElementById("exportBtn").addEventListener("click", exportCSV);
+  document.getElementById("resetBtn").addEventListener("click", resetStationsKeepTotals);
+  document.getElementById("wipeBtn").addEventListener("click", wipeEverything);
+
+  // Tick
+  function tick(){
+    globalUpdateOnStateChange();
+    render();
+    setTimeout(tick, 1000);
+  }
+
+  render();
+  tick();
+
+  // Service worker
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
